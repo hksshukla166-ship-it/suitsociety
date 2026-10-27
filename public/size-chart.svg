@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600" fill="none">
+  <rect width="1200" height="1600" fill="#F8F5F0"/>
+  <rect x="80" y="80" width="1040" height="1440" rx="24" fill="#FFFFFF" stroke="#D4AF37" stroke-width="2"/>
+  <text x="600" y="180" text-anchor="middle" fill="#111111" font-family="Georgia, serif" font-size="56">SUIT SOCIETY</text>
+  <text x="600" y="240" text-anchor="middle" fill="#666666" font-family="Arial, sans-serif" font-size="28">Size Chart</text>
+  <text x="600" y="760" text-anchor="middle" fill="#888888" font-family="Arial, sans-serif" font-size="30">Upload your size chart image from the Admin Settings page.</text>
+  <text x="600" y="820" text-anchor="middle" fill="#888888" font-family="Arial, sans-serif" font-size="24">Recommended sizes: XS, S, M, L, XL, XXL, 3XL</text>
+  <rect x="180" y="320" width="840" height="360" rx="16" fill="#FCFAF7" stroke="#E8E0D4"/>
+  <line x1="260" y1="420" x2="940" y2="420" stroke="#D4AF37" stroke-width="2"/>
+  <line x1="260" y1="500" x2="940" y2="500" stroke="#E8E0D4" stroke-width="2"/>
+  <line x1="260" y1="580" x2="940" y2="580" stroke="#E8E0D4" stroke-width="2"/>
+  <text x="260" y="390" fill="#444444" font-family="Arial, sans-serif" font-size="24">Size</text>
+  <text x="520" y="390" fill="#444444" font-family="Arial, sans-serif" font-size="24">Chest</text>
+  <text x="760" y="390" fill="#444444" font-family="Arial, sans-serif" font-size="24">Length</text>
+</svg>

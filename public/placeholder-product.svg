@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="533" viewBox="0 0 400 533" fill="none">
+  <rect width="400" height="533" fill="#F5F0EB"/>
+  <rect x="120" y="180" width="160" height="173" rx="12" fill="#E8E0D8"/>
+  <path d="M160 220h80M160 256h80M160 292h48" stroke="#C4B8AC" stroke-width="8" stroke-linecap="round"/>
+  <text x="200" y="420" text-anchor="middle" fill="#9A8F84" font-family="Georgia, serif" font-size="18">No Image</text>
+</svg>

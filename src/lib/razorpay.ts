@@ -1,0 +1,47 @@
+import Razorpay from "razorpay";
+import crypto from "crypto";
+
+export function getRazorpayInstance() {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID!,
+    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  });
+}
+
+export async function createRazorpayOrder(amount: number, receipt: string) {
+  const razorpay = getRazorpayInstance();
+  const order = await razorpay.orders.create({
+    amount: Math.round(amount * 100),
+    currency: "INR",
+    receipt,
+  });
+  return order;
+}
+
+export function verifyRazorpaySignature(
+  orderId: string,
+  paymentId: string,
+  signature: string
+): boolean {
+  const body = orderId + "|" + paymentId;
+  const expectedSignature = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+    .update(body)
+    .digest("hex");
+  return expectedSignature === signature;
+}
+
+export function verifyRazorpayWebhookSignature(
+  body: string,
+  signature: string | null
+): boolean {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret || !signature) return false;
+
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+
+  return expectedSignature === signature;
+}
