@@ -1,6 +1,88 @@
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { getPool, isMysqlConfigured } from "@/lib/db/pool";
+import mysql from "mysql2/promise";
+import { getPool, isMysqlConfigured, resetPool } from "@/lib/db/pool";
+
+export function applyMysqlEnv(config: {
+  mysqlHost?: string;
+  mysqlPort?: string;
+  mysqlUser?: string;
+  mysqlPassword?: string;
+  mysqlDatabase?: string;
+  databaseUrl?: string;
+}): void {
+  if (config.databaseUrl) {
+    process.env.DATABASE_URL = config.databaseUrl;
+    delete process.env.MYSQL_HOST;
+    delete process.env.MYSQL_DATABASE;
+  } else {
+    delete process.env.DATABASE_URL;
+    if (config.mysqlHost) process.env.MYSQL_HOST = config.mysqlHost;
+    if (config.mysqlPort) process.env.MYSQL_PORT = config.mysqlPort;
+    if (config.mysqlUser) process.env.MYSQL_USER = config.mysqlUser;
+    process.env.MYSQL_PASSWORD = config.mysqlPassword ?? "";
+    if (config.mysqlDatabase) process.env.MYSQL_DATABASE = config.mysqlDatabase;
+  }
+  resetPool();
+}
+
+export async function ensureMysqlDatabaseExists(): Promise<{ success: boolean; error?: string }> {
+  if (!isMysqlConfigured()) {
+    return { success: false, error: "MySQL not configured." };
+  }
+
+  const dbName = process.env.MYSQL_DATABASE || "suitsociety";
+
+  try {
+    if (process.env.DATABASE_URL) {
+      const parsed = new URL(process.env.DATABASE_URL);
+      const name = parsed.pathname.replace(/^\//, "") || dbName;
+      parsed.pathname = "/";
+      const conn = await mysql.createConnection({
+        uri: parsed.toString(),
+      });
+      await conn.query(
+        `CREATE DATABASE IF NOT EXISTS \`${name.replace(/`/g, "")}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+      );
+      await conn.end();
+      return { success: true };
+    }
+
+    const host = process.env.MYSQL_HOST || "127.0.0.1";
+    const tls =
+      process.env.MYSQL_SSL === "true" || /tidbcloud\.com|tidb\.pingcap\.com/i.test(host)
+        ? { minVersion: "TLSv1.2" as const, rejectUnauthorized: true }
+        : undefined;
+    const conn = await mysql.createConnection({
+      host,
+      port: Number(process.env.MYSQL_PORT || 3306),
+      user: process.env.MYSQL_USER || "root",
+      password: process.env.MYSQL_PASSWORD || "",
+      ...(tls ? { ssl: tls } : {}),
+    });
+    await conn.query(
+      `CREATE DATABASE IF NOT EXISTS \`${dbName.replace(/`/g, "")}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
+    );
+    await conn.end();
+    return { success: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (message.toLowerCase().includes("access denied")) {
+      return {
+        success: false,
+        error:
+          "MySQL login failed. Check MySQL user and password (root often needs the password you set during MySQL install).",
+      };
+    }
+    if (message.toLowerCase().includes("econnrefused")) {
+      return {
+        success: false,
+        error: "Cannot reach MySQL on this host/port. Start MySQL (XAMPP/WAMP/services.msc) and use 127.0.0.1:3306.",
+      };
+    }
+    return { success: false, error: message };
+  }
+}
 
 function splitSqlStatements(schema: string): string[] {
   const statements: string[] = [];
@@ -36,6 +118,9 @@ export async function initializeDatabase(): Promise<{ success: boolean; error?: 
   if (!existsSync(schemaPath)) {
     return { success: false, error: "mysql/schema.sql not found." };
   }
+
+  const created = await ensureMysqlDatabaseExists();
+  if (!created.success) return created;
 
   const schema = readFileSync(schemaPath, "utf8");
   const pool = getPool();

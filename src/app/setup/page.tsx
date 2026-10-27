@@ -36,9 +36,11 @@ export default function SetupPage() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Setup failed");
+      if (!res.ok) {
+        throw new Error(data.error || data.message || "Setup failed");
+      }
 
-      toast.success("Setup complete! Restart the dev server, then open the store.");
+      toast.success(data.message || "Setup complete! Restart the dev server, then open the store.");
       setTimeout(() => router.push("/"), 2000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Setup failed");
