@@ -1,7 +1,6 @@
-import { existsSync } from "fs";
-import { join } from "path";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { hasDatabaseCredentials, isHostedDeployment } from "@/lib/runtime-env";
 
 const PUBLIC_PATHS = ["/setup", "/api/setup", "/api/setup/init-db", "/api/health"];
 const ADMIN_PUBLIC_PATHS = ["/admin/login"];
@@ -9,10 +8,9 @@ const ADMIN_PUBLIC_PATHS = ["/admin/login"];
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const isSetup =
-    Boolean(process.env.DATABASE_URL) ||
-    Boolean(process.env.MYSQL_HOST && process.env.MYSQL_DATABASE && process.env.MYSQL_USER) ||
-    existsSync(join(process.cwd(), ".setup-complete"));
+  // Cloudflare/Vercel inlines proxy env at build time, so dashboard secrets are often
+  // invisible here even when they exist at runtime. Never trap production on /setup.
+  const isSetup = hasDatabaseCredentials() || isHostedDeployment();
 
   if (!isSetup) {
     if (!PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Loader2, Sparkles } from "lucide-react";
 export default function SetupPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [hostedHint, setHostedHint] = useState<string | null>(null);
   const [form, setForm] = useState({
     mysqlHost: "127.0.0.1",
     mysqlPort: "3306",
@@ -23,6 +24,30 @@ export default function SetupPage() {
     razorpayKeySecret: "",
     siteUrl: "http://localhost:3000",
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/setup")
+      .then((res) => res.json())
+      .then((data) => {
+        if (cancelled) return;
+        if (data.configured) {
+          router.replace("/");
+          return;
+        }
+        if (data.hosted) {
+          setHostedHint(
+            "On Cloudflare, do not use this form. Set DATABASE_URL in Pages → Settings → Variables and Secrets, then rebuild. 127.0.0.1 will not work on Cloudflare."
+          );
+        }
+      })
+      .catch(() => {
+        /* keep the local form */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,6 +87,11 @@ export default function SetupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {hostedHint ? (
+            <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">
+              {hostedHint}
+            </p>
+          ) : null}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>MySQL host</Label>

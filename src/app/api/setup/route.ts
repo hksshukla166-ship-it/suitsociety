@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { join } from "path";
 import { applyMysqlEnv, initializeDatabase } from "@/lib/init-db";
+import { hasDatabaseCredentials, isHostedDeployment } from "@/lib/runtime-env";
+
+export async function GET() {
+  return NextResponse.json({
+    hosted: isHostedDeployment(),
+    configured: hasDatabaseCredentials(),
+  });
+}
 
 function mergeEnvFile(updates: Record<string, string>): void {
   const envPath = join(process.cwd(), ".env.local");
@@ -68,6 +76,16 @@ export async function POST(request: NextRequest) {
       envUpdates.NEXT_PUBLIC_RAZORPAY_KEY_ID = String(razorpayKeyId);
     }
     if (razorpayKeySecret) envUpdates.RAZORPAY_KEY_SECRET = String(razorpayKeySecret);
+
+    if (isHostedDeployment()) {
+      return NextResponse.json(
+        {
+          error:
+            "This setup form cannot save files on Cloudflare. Set DATABASE_URL (or MYSQL_HOST, MYSQL_USER, MYSQL_PASSWORD, MYSQL_DATABASE) in Cloudflare Pages → Settings → Environment variables, then rebuild and redeploy.",
+        },
+        { status: 400 }
+      );
+    }
 
     mergeEnvFile(envUpdates);
     writeFileSync(join(process.cwd(), ".setup-complete"), new Date().toISOString());

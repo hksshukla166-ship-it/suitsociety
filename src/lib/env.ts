@@ -1,6 +1,5 @@
-import { existsSync } from "fs";
-import { join } from "path";
 import { isMysqlConfigured } from "@/lib/db/pool";
+import { hasDatabaseCredentials, isHostedDeployment } from "@/lib/runtime-env";
 
 export interface EnvConfig {
   RAZORPAY_KEY_ID: string;
@@ -12,9 +11,8 @@ export interface EnvConfig {
 const REQUIRED_VARS = [] as const;
 
 export function isSetupComplete(): boolean {
-  const setupFile = join(process.cwd(), ".setup-complete");
-  if (existsSync(setupFile)) return true;
-  return isMysqlConfigured();
+  if (hasDatabaseCredentials() || isMysqlConfigured()) return true;
+  return isHostedDeployment();
 }
 
 export function getMissingEnvVars(): string[] {

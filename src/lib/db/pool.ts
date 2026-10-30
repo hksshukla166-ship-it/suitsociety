@@ -11,10 +11,12 @@ export function resetPool(): void {
 }
 
 export function isMysqlConfigured(): boolean {
-  return Boolean(
-    process.env.DATABASE_URL ||
-      (process.env.MYSQL_HOST && process.env.MYSQL_DATABASE && process.env.MYSQL_USER)
-  );
+  const url = String(process.env.DATABASE_URL ?? "").trim();
+  if (url) return true;
+  const host = String(process.env.MYSQL_HOST ?? "").trim();
+  const database = String(process.env.MYSQL_DATABASE ?? "").trim();
+  const user = String(process.env.MYSQL_USER ?? "").trim();
+  return Boolean(host && database && user);
 }
 
 function useTls(host: string): boolean {
